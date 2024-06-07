@@ -11,6 +11,50 @@ import torch
 from learner.utils import mse, grad
 from time import perf_counter
 
+
+class ParametricNN(ln.nn.Module):
+    def __init__(self, latent_dim, layers, width, activation):
+        super(ParametricNN, self).__init__()
+        self.latent_dim = latent_dim # 8
+        self.__init_net(layers, width, activation)
+
+    def forward(self, x):
+        return self.net(x)
+
+    def __init_net(self, layers, width, activation):
+        net = torch.nn.Sequential(
+            torch.nn.Linear(self.latent_dim, 2 * self.latent_dim),
+            torch.nn.Tanh(),
+            torch.nn.Linear(2 * self.latent_dim, 2 * self.latent_dim),
+            torch.nn.Tanh(),
+            # torch.nn.Linear(128, 128),
+            # torch.nn.ReLU(),
+            torch.nn.Linear(2 * self.latent_dim, self.latent_dim),
+        )
+
+        self.net = net
+        
+class ParametersNN(ln.nn.Module):
+    def __init__(self, latent_dim, layers, width, activation):
+        super(ParametersNN, self).__init__()
+        self.Qslope = ParametricNN(latent_dim, layers, width, activation)
+        self.Qincpt = ParametricNN(latent_dim, layers, width, activation)
+        self.Pincpt = ParametricNN(latent_dim, layers, width, activation)
+
+    def forward(self, x):
+        Qslope = self.Qslope(x)
+        Qincpt = self.Qincpt(x)
+        Pincpt = self.Pincpt(x)
+        return {'Qslope': Qslope, 'Qincpt': Qincpt, 'Pincpt': Pincpt}
+    
+    # def criterion(self, X, y):
+    #     Q = self.Qslope(X['interval']) + self.Qincpt(X['interval'])
+    #     P = 0.0 * X['interval'] + self.Pincpt(X['interval'])
+    #     loss_Q = ((Q - y['Q_target']) ** 2).mean()
+    #     loss_P = ((P - y['P_target']) ** 2).mean()
+    #     loss = loss_Q + loss_P
+    #     return loss
+
 class SPNN(ln.nn.LossNN):
     '''NN for solving the optimal control of shortest path with obstacles
     '''
@@ -44,14 +88,20 @@ class SPNN(ln.nn.LossNN):
         # parameters for Lag mul ends
 
         self.trajs = trajs
-        self.__init_param()
+        # self.__init_param()
         self.__init_net(layers, width, activation, ntype)
         
     # X['interval'] is num * 1
     def criterion(self, X, y):
+        # self.params['Qslope'] is trajs * 1 * latent_dim
+        # self.params['Qincpt'] is trajs * 1 * latent_dim
+        # self.params['Pincpt'] is trajs * 1 * latent_dim
+        
+        self.params = self.parameters_nn(torch.ones((self.trajs, 1, self.latent_dim), dtype=self.dtype, device=self.device))
         Q = self.params['Qslope'] * X['interval'] + self.params['Qincpt']
-        P = 0.0 * X['interval'] + self.params['Pincpt']
+        P = 0.0 * X['interval'] + self.params['Pincpt']        
         QP = torch.cat([Q,P], axis = -1).reshape([-1, self.latent_dim * 2])
+        self.QP = QP
         qp = self.net(QP)
         H = self.H(qp)  # (trajs*num) *1
         dH = grad(H, qp)  # (trajs*num) * (2latent_dim)
@@ -76,16 +126,17 @@ class SPNN(ln.nn.LossNN):
         return mse(bdq, y['bd'])
     
     # MSE of bd err + sum of |min(h(q),0)|^2 (i.e., penalty method using quadratic)
-    def con_loss(self, X, y):
-        Q = self.params['Qslope'] * X['interval'] + self.params['Qincpt']
-        P = 0.0 * X['interval'] + self.params['Pincpt']
-        QP = torch.cat([Q,P], axis = -1).reshape([-1, self.latent_dim * 2])
-        q = self.net(QP)[...,:self.dim]
-        con_loss = torch.mean(torch.relu(-self.h(q))**2)
-        return self.bd_loss(X,y) + con_loss
+    # def con_loss(self, X, y):
+    #     Q = self.params['Qslope'] * X['interval'] + self.params['Qincpt']
+    #     P = 0.0 * X['interval'] + self.params['Pincpt']
+    #     QP = torch.cat([Q,P], axis = -1).reshape([-1, self.latent_dim * 2])
+    #     q = self.net(QP)[...,:self.dim]
+    #     con_loss = torch.mean(torch.relu(-self.h(q))**2)
+    #     return self.bd_loss(X,y) + con_loss
     
     # prediction without added dims
     def predict(self, t, returnnp=False):
+        # TODO: this is not working, need to change self.params
         Q = self.params['Qslope'] * t + self.params['Qincpt']
         P = 0.0 * t + self.params['Pincpt']
         QP = torch.cat([Q,P], dim = -1)
@@ -110,9 +161,7 @@ class SPNN(ln.nn.LossNN):
         
     # t is num * 1
     def predict_v(self, t, returnnp=False):
-        Q = self.params['Qslope'] * t + self.params['Qincpt']
-        P = 0.0 * t + self.params['Pincpt']
-        QP = torch.cat([Q,P], axis = -1).reshape([-1, self.latent_dim * 2])
+        QP = self.QP
         qp = self.net(QP)    
         grad_output = self.params['Qslope'].repeat([1,QP.shape[0]//self.trajs, 1]).reshape([-1, self.latent_dim])
         grad_output1 = torch.cat([grad_output,torch.zeros_like(grad_output)], dim = -1)
@@ -244,3 +293,5 @@ class SPNN(ln.nn.LossNN):
            self.net = ln.nn.LASympNet(self.latent_dim*2, layers, width, activation)
         elif ntype == 'FNN':
            self.net = ln.nn.FNN(self.latent_dim*2, self.latent_dim*2, layers, width, activation)
+           
+        self.parameters_nn = ParametersNN(self.latent_dim, layers, width, activation)

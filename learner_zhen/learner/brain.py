@@ -61,6 +61,7 @@ class Brain:
         self.dtype = dtype
         self.device = device
         self.no_test = no_test
+        # self.parameters_nn = parameters_nn
         
         self.loss_history = None
         self.encounter_nan = False
@@ -137,7 +138,7 @@ class Brain:
             print('Best model at iteration {}:'.format(iteration), flush=True)
             print('Train loss:', loss_train, 'Test loss:', loss_test, flush=True)
             if self.path == None:
-            	self.best_model = torch.load('model/model{}.pkl'.format(iteration))
+                self.best_model = torch.load('model/model{}.pkl'.format(iteration))
             else:
                 self.best_model = torch.load('model/{}/model{}.pkl'.format(self.path,iteration))
         else:
@@ -205,12 +206,15 @@ class Brain:
         self.data.dtype = self.dtype
         self.net.device = self.device
         self.net.dtype = self.dtype
+        self.parameters_nn_device = self.device
+        self.parameters_nn_dtype = self.dtype
         self.__init_optimizer()
         self.__init_criterion()
     
     def __init_optimizer(self):
         if self.optimizer == 'adam':
-            self.__optimizer = torch.optim.Adam(self.net.parameters(), lr=self.lr)
+            params = list(self.net.net.parameters()) + list(self.net.parameters_nn.parameters())
+            self.__optimizer = torch.optim.Adam(params, lr=self.lr)
         else:
             raise NotImplementedError
     
