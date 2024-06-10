@@ -10,103 +10,6 @@ import numpy as np
 import torch
 from learner.utils import mse, grad
 from time import perf_counter
-import torch.nn.functional as F
-import torch.nn as nn
-
-class ParametricNN(ln.nn.Module):
-    def __init__(self, latent_dim, layers, width, activation):
-        super(ParametricNN, self).__init__()
-        self.latent_dim = latent_dim # 8
-        # self.__init_net(layers, width, activation)
-        self.fc1 = torch.nn.Linear(self.latent_dim, 128, bias=True)
-        self.fc2 = torch.nn.Linear(128, 128, bias=True)
-        self.fc3 = torch.nn.Linear(128, 128, bias=True)
-        self.fc4 = torch.nn.Linear(128, self.latent_dim, bias=True)
-
-        self.bn1 = nn.BatchNorm1d(128)
-        self.bn2 = nn.BatchNorm1d(128)
-        self.bn3 = nn.BatchNorm1d(128)
-
-        self.__init_weights()
-
-    def forward(self, x):
-        x = x.view(-1, self.latent_dim)
-        x = self.bn1(F.relu(self.fc1(x)))
-        x = self.bn2(F.relu(self.fc2(x)))
-        x = self.bn3(F.relu(self.fc3(x)))
-        x = self.fc4(x)
-        x = x.view(-1, 1, self.latent_dim)
-        return x
-
-    # def __init_net(self, layers, width, activation):
-    #     net = torch.nn.Sequential(
-    #         torch.nn.Linear(self.latent_dim, 2 * self.latent_dim),
-    #         torch.nn.ReLU(),
-    #         torch.nn.Linear(2 * self.latent_dim, 2 * self.latent_dim),
-    #         torch.nn.ReLU(),
-    #         torch.nn.Linear(2 * self.latent_dim, 2 * self.latent_dim),
-    #         torch.nn.ReLU(),
-    #         # torch.nn.Linear(128, 128),
-    #         # torch.nn.ReLU(),
-    #         torch.nn.Linear(2 * self.latent_dim, self.latent_dim),
-    #     )
-    #
-    #     self.net = net
-
-    def __init_weights(self):
-        for m in self.modules():
-            if isinstance(m, torch.nn.Linear):
-                nn.init.kaiming_uniform(m.weight)
-            # if isinstance(m, torch.nn.BatchNorm1d):
-            #     nn.init.xavier_uniform(m.weight)
-        
-class ParametersNN(ln.nn.Module):
-    def __init__(self, latent_dim, layers, width, activation):
-        super(ParametersNN, self).__init__()
-        self.Qslope = ParametricNN(latent_dim, layers, width, activation)
-        self.Qincpt = ParametricNN(latent_dim, layers, width, activation)
-        self.Pincpt = ParametricNN(latent_dim, layers, width, activation)
-
-    def forward(self, x):
-        Qslope = self.Qslope(x)
-        Qincpt = self.Qincpt(x)
-        Pincpt = self.Pincpt(x)
-        return {'Qslope': Qslope, 'Qincpt': Qincpt, 'Pincpt': Pincpt}
-    
-    # def criterion(self, X, y):
-    #     Q = self.Qslope(X['interval']) + self.Qincpt(X['interval'])
-    #     P = 0.0 * X['interval'] + self.Pincpt(X['interval'])
-    #     loss_Q = ((Q - y['Q_target']) ** 2).mean()
-    #     loss_P = ((P - y['P_target']) ** 2).mean()
-    #     loss = loss_Q + loss_P
-    #     return loss
-
-class QslopeNet(ln.nn.Module):
-    def __init__(self, latent_dim, layers, width, activation):
-        super(QslopeNet, self).__init__()
-        self.Qslope = ParametricNN(latent_dim, layers, width, activation)
-
-    def forward(self, x):
-        Qslope = self.Qslope(x)
-        return Qslope
-
-class QincptNet(ln.nn.Module):
-    def __init__(self, latent_dim, layers, width, activation):
-        super(QincptNet, self).__init__()
-        self.Qincpt = ParametricNN(latent_dim, layers, width, activation)
-
-    def forward(self, x):
-        Qincpt = self.Qincpt(x)
-        return Qincpt
-
-class PincptNet(ln.nn.Module):
-    def __init__(self, latent_dim, layers, width, activation):
-        super(PincptNet, self).__init__()
-        self.Pincpt = ParametricNN(latent_dim, layers, width, activation)
-
-    def forward(self, x):
-        Pincpt = self.Pincpt(x)
-        return Pincpt
 
 class SPNN(ln.nn.LossNN):
     '''NN for solving the optimal control of shortest path with obstacles
@@ -141,7 +44,7 @@ class SPNN(ln.nn.LossNN):
         # parameters for Lag mul ends
 
         self.trajs = trajs
-        # self.__init_param()
+        self.__init_param()
         self.__init_net(layers, width, activation, ntype)
         
     # X['interval'] is num * 1
@@ -149,39 +52,25 @@ class SPNN(ln.nn.LossNN):
         # self.params['Qslope'] is trajs * 1 * latent_dim
         # self.params['Qincpt'] is trajs * 1 * latent_dim
         # self.params['Pincpt'] is trajs * 1 * latent_dim
-        
-        # self.params = self.parameters_nn(torch.ones((self.trajs, 1, self.latent_dim), dtype=self.dtype, device=self.device))
-        Qslope = self.qslope_net(torch.ones((self.trajs, 1, self.latent_dim), dtype=self.dtype, device=self.device))
-        Qincpt = self.qincpt_net(torch.ones((self.trajs, 1, self.latent_dim), dtype=self.dtype, device=self.device))
-        Pincpt = self.pincpt_net(torch.ones((self.trajs, 1, self.latent_dim), dtype=self.dtype, device=self.device))
-        Q = Qslope * X['interval'] + Qincpt
-        P = 0.0 * X['interval'] + Pincpt
+        Q = self.params['Qslope'] * X['interval'] + self.params['Qincpt']
+        P = 0.0 * X['interval'] + self.params['Pincpt']
         QP = torch.cat([Q,P], axis = -1).reshape([-1, self.latent_dim * 2])
         qp = self.net(QP)
         H = self.H(qp)  # (trajs*num) *1
         dH = grad(H, qp)  # (trajs*num) * (2latent_dim)
-        grad_output = Qslope.repeat([1,QP.shape[0]//self.trajs, 1]).reshape([-1, self.latent_dim])
+        grad_output = self.params['Qslope'].repeat([1,QP.shape[0]//self.trajs, 1]).reshape([-1, self.latent_dim])
         grad_output1 = torch.cat([grad_output,torch.zeros_like(grad_output)], dim = -1)
         jacob = torch.autograd.functional.jvp(self.net, QP, grad_output1, create_graph=True)[1]
         loss_1 = mse(jacob[:, :self.latent_dim], dH[...,self.latent_dim:])
         loss_2 = mse(jacob[:, self.latent_dim:], -dH[...,:self.latent_dim])
         loss_sympnet = loss_1 + loss_2
-        # print("loss_sympnet: ", loss_sympnet)
-
-        loss_bd = self.bd_loss(X, y)
-        loss = loss_sympnet + self.lam * loss_bd
-        # print("loss_bd", loss_bd)
-
+        
+        loss = loss_sympnet + self.lam * self.bd_loss(X, y)
         # aug Lag: ||max(0, mul - rho * h(q))||^2/ (2*rho)
-        loss_aug_lag = torch.sum(torch.relu(self.lag_mul_h - self.rho_h * self.h(qp[...,:self.dim]))**2)/(2*self.rho_h) # augmented Lagrangian
-        loss = loss + loss_aug_lag
-        # print("aug Lag: ", loss_aug_lag)
-
+        loss = loss + torch.sum(torch.relu(self.lag_mul_h - self.rho_h * self.h(qp[...,:self.dim]))**2)/(2*self.rho_h) # augmented Lagrangian
         # loss for bd
         y_m_bdq = y['bd'] - self.predict_q(X['bd'])
-        loss_aug_bd = torch.nn.MSELoss(reduction='sum')(self.lag_mul_bc, self.rho_bc * y_m_bdq)/(2*self.rho_bc)
-        loss = loss + loss_aug_bd
-        # print("loss_aug_bd: ", loss_aug_bd)
+        loss = loss + torch.nn.MSELoss(reduction='sum')(self.lag_mul_bc, self.rho_bc * y_m_bdq)/(2*self.rho_bc)
         return loss
     
     # MSE loss of bdry condition
@@ -200,7 +89,6 @@ class SPNN(ln.nn.LossNN):
     
     # prediction without added dims
     def predict(self, t, returnnp=False):
-        # TODO: this is not working, need to change self.params
         Q = self.params['Qslope'] * t + self.params['Qincpt']
         P = 0.0 * t + self.params['Pincpt']
         QP = torch.cat([Q,P], dim = -1)
@@ -245,9 +133,7 @@ class SPNN(ln.nn.LossNN):
     def LBFGS_training(self, X, y, returnnp=False, lbfgs_step = 0):
         from torch.optim import LBFGS, Adam
         start = perf_counter()
-        optim_bd = LBFGS([param for param in self.parameters_nn.Qslope.parameters()] +
-                         [param for param in self.parameters_nn.Qincpt.parameters()] +
-                         [param for param in self.parameters_nn.Pincpt.parameters()], history_size=100,
+        optim_bd = LBFGS([self.params['Qslope'], self.params['Qincpt'], self.params['Pincpt']], history_size=100,
                         max_iter=10,
                         tolerance_grad=1e-08, tolerance_change=1e-09,
                         line_search_fn="strong_wolfe")
@@ -367,8 +253,3 @@ class SPNN(ln.nn.LossNN):
            self.net = ln.nn.LASympNet(self.latent_dim*2, layers, width, activation)
         elif ntype == 'FNN':
            self.net = ln.nn.FNN(self.latent_dim*2, self.latent_dim*2, layers, width, activation)
-           
-        self.parameters_nn = ParametersNN(self.latent_dim, layers, width, activation)
-        self.qslope_net = QslopeNet(self.latent_dim, layers, width, activation)
-        self.qincpt_net = QincptNet(self.latent_dim, layers, width, activation)
-        self.pincpt_net = PincptNet(self.latent_dim, layers, width, activation)
