@@ -102,11 +102,8 @@ class SPNN(ln.nn.LossNN):
     
     # prediction q without added dims
     def predict_q(self, t, returnnp=False):
-        Qslope = self.qslope_net(torch.ones((self.trajs, 1, self.latent_dim), dtype=self.dtype, device=self.device))
-        Qincpt = self.qincpt_net(torch.ones((self.trajs, 1, self.latent_dim), dtype=self.dtype, device=self.device))
-        Pincpt = self.pincpt_net(torch.ones((self.trajs, 1, self.latent_dim), dtype=self.dtype, device=self.device))
-        Q = Qslope * t + Qincpt
-        P = 0.0 * t + Pincpt
+        Q = self.params['Qslope'] * t + self.params['Qincpt']
+        P = 0.0 * t + self.params['Pincpt']
         QP = torch.cat([Q,P], dim = -1)
         qp = self.net(QP)
         q = qp[...,:self.dim]
@@ -116,14 +113,11 @@ class SPNN(ln.nn.LossNN):
         
     # t is num * 1
     def predict_v(self, t, returnnp=False):
-        Qslope = self.qslope_net(torch.ones((self.trajs, 1, self.latent_dim), dtype=self.dtype, device=self.device))
-        Qincpt = self.qincpt_net(torch.ones((self.trajs, 1, self.latent_dim), dtype=self.dtype, device=self.device))
-        Pincpt = self.pincpt_net(torch.ones((self.trajs, 1, self.latent_dim), dtype=self.dtype, device=self.device))
-        Q = Qslope * t + Qincpt
-        P = 0.0 * t + Pincpt
-        QP = torch.cat([Q, P], axis=-1).reshape([-1, self.latent_dim * 2])
+        Q = self.params['Qslope'] * t + self.params['Qincpt']
+        P = 0.0 * t + self.params['Pincpt']
+        QP = torch.cat([Q,P], axis = -1).reshape([-1, self.latent_dim * 2])
         qp = self.net(QP)    
-        grad_output = Qslope.repeat([1,QP.shape[0]//self.trajs, 1]).reshape([-1, self.latent_dim])
+        grad_output = self.params['Qslope'].repeat([1,QP.shape[0]//self.trajs, 1]).reshape([-1, self.latent_dim])
         grad_output1 = torch.cat([grad_output,torch.zeros_like(grad_output)], dim = -1)
         v = torch.autograd.functional.jvp(self.net, QP, grad_output1, create_graph=True)[1][:,:self.latent_dim].unsqueeze(0)
         if returnnp:
