@@ -68,6 +68,7 @@ class Brain:
         self.best_model = None
         
         self.__optimizer = None
+        self.__scheduler = None
         self.__criterion = None
     
     @timing
@@ -87,6 +88,8 @@ class Brain:
                 else:
                     loss_test = self.__criterion(self.net(self.data.X_test), self.data.y_test)
                 print('{:<9}Train loss: {:<25}Test loss: {:<25}'.format(i, loss.item(), loss_test.item()), flush=True)
+                for params in self.__optimizer.param_groups:
+                    print("learning rate: ", params["lr"])
                 if torch.any(torch.isnan(loss)):
                     try:
                         print('Encountering nan, restore from last saved model.')
@@ -117,6 +120,7 @@ class Brain:
                 self.__optimizer.zero_grad(True)
                 loss.backward()
                 self.__optimizer.step()
+                self.__scheduler.step()
             self.loss_history = np.array(loss_history)
         print('Done!', flush=True)
         return self.loss_history
@@ -209,14 +213,24 @@ class Brain:
         self.parameters_nn_device = self.device
         self.parameters_nn_dtype = self.dtype
         self.__init_optimizer()
+        self.__init_scheduler()
         self.__init_criterion()
     
     def __init_optimizer(self):
         if self.optimizer == 'adam':
-            params = list(self.net.net.parameters()) + list(self.net.parameters_nn.parameters())
-            self.__optimizer = torch.optim.Adam(params, lr=self.lr)
+            # params = list(self.net.net.parameters()) + list(self.net.parameters_nn.parameters())
+            self.__optimizer = torch.optim.Adam([{'params': self.net.net.parameters(), 'lr': 0.001},
+                                                {'params': self.net.qslope_net.parameters(), 'lr': 0.001},
+                                                {'params': self.net.qincpt_net.parameters(), 'lr': 0.001},
+                                                {'params': self.net.pincpt_net.parameters(), 'lr': 0.001},],
+                                                lr=self.lr)
+            # self.__optimizer = torch.optim.Adam(params, lr=self.lr)
         else:
             raise NotImplementedError
+
+    def __init_scheduler(self):
+        lambda1 = lambda iteration: 0.1 ** (iteration // 2000)
+        self.__scheduler = torch.optim.lr_scheduler.LambdaLR(self.__optimizer, [lambda1, lambda1, lambda1, lambda1])
     
     def __init_criterion(self):
         if isinstance(self.net, LossNN):
