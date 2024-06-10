@@ -411,10 +411,10 @@ def main():
     # execution_time = (end - start)
     # print('PS running time: {}'.format(execution_time), flush=True)
     # TODO: this q_ps is not time-uniformly distributed. How to generate anime for this?
-    if args.testcase == 2:
-        plot_heat(q_ps, net, figname+'/PSmethod', num_interpolate, traj_count, y_train, y_test)
-    else:
-        plot_anime(q_ps[0], net, figname+'/PSmethod')
+    # if args.testcase == 2:
+    #     plot_heat(q_ps, net, figname+'/PSmethod', num_interpolate, traj_count, y_train, y_test)
+    # else:
+    #     plot_anime(q_ps[0], net, figname+'/PSmethod')
     
 if __name__ == '__main__':
     main()

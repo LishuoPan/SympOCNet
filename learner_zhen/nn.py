@@ -245,7 +245,9 @@ class SPNN(ln.nn.LossNN):
     def LBFGS_training(self, X, y, returnnp=False, lbfgs_step = 0):
         from torch.optim import LBFGS, Adam
         start = perf_counter()
-        optim_bd = LBFGS([self.params['Qslope'], self.params['Qincpt'], self.params['Pincpt']], history_size=100,
+        optim_bd = LBFGS([param for param in self.parameters_nn.Qslope.parameters()] +
+                         [param for param in self.parameters_nn.Qincpt.parameters()] +
+                         [param for param in self.parameters_nn.Pincpt.parameters()], history_size=100,
                         max_iter=10,
                         tolerance_grad=1e-08, tolerance_change=1e-09,
                         line_search_fn="strong_wolfe")
