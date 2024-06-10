@@ -137,7 +137,7 @@ class Brain:
             print('Best model at iteration {}:'.format(iteration), flush=True)
             print('Train loss:', loss_train, 'Test loss:', loss_test, flush=True)
             if self.path == None:
-            	self.best_model = torch.load('model/model{}.pkl'.format(iteration))
+                self.best_model = torch.load('model/model{}.pkl'.format(iteration))
             else:
                 self.best_model = torch.load('model/{}/model{}.pkl'.format(self.path,iteration))
         else:

@@ -102,7 +102,7 @@ class Data:
         @map_elementwise
         def trans(d):
             if isinstance(d, np.ndarray):
-                return torch.DoubleTensor(d)
+                return torch.tensor(d, dtype=torch.double, device='cpu')
             elif isinstance(d, torch.Tensor):
                 return d.cpu()
         for d in ['X_train', 'y_train', 'X_test', 'y_test']:
@@ -112,7 +112,7 @@ class Data:
         @map_elementwise
         def trans(d):
             if isinstance(d, np.ndarray):
-                return torch.cuda.DoubleTensor(d)
+                return torch.tensor(d, dtype=torch.double, device='cuda')
             elif isinstance(d, torch.Tensor):
                 return d.cuda()
         for d in ['X_train', 'y_train', 'X_test', 'y_test']:

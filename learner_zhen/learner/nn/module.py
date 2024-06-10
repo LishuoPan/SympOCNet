@@ -25,18 +25,29 @@ class Module(torch.nn.Module):
 
     @device.setter
     def device(self, d):
-        if d == 'cpu':
-            self.cpu()
+        if isinstance(d, torch.device):
+            if d.type == 'cuda':
+                self.cuda()
+            else:
+                self.cpu()
             for module in self.modules():
                 if isinstance(module, Module):
-                    module.__device = torch.device('cpu')
-        elif d == 'gpu':
-            self.cuda()
-            for module in self.modules():
-                if isinstance(module, Module):
-                    module.__device = torch.device('cuda')
+                    module.__device = d
+        elif isinstance(d, str):
+            if d == 'cpu':
+                self.cpu()
+                for module in self.modules():
+                    if isinstance(module, Module):
+                        module.__device = torch.device('cpu')
+            elif d == 'gpu':
+                self.cuda()
+                for module in self.modules():
+                    if isinstance(module, Module):
+                        module.__device = torch.device('cuda')
+            else:
+                raise ValueError
         else:
-            raise ValueError
+            raise TypeError("Device must be a string or a torch.device object.")
     
     @dtype.setter
     def dtype(self, d):

@@ -124,6 +124,10 @@ def plot_heat(q_pred, net, filename, num_interpolate, num_total, y_train, y_test
         zz.append(h(p).reshape([100,100]))
     zz = np.min(np.array(zz), axis = 0)
     
+    # convert y_train and y_test to numpy
+    y_train['bd'] = y_train['bd'].detach().cpu()
+    y_test['bd'] = y_test['bd'].detach().cpu()
+    
     plt.figure(figsize = [4*num_interpolate,4*2])
     for index in range(num_total):
         ax = plt.subplot(2,num_interpolate,index+1)
@@ -286,11 +290,11 @@ def main():
         q_initial = [-2, -4, 2, -4]
         q_terminal = [2, 2, -2, 2]
     elif problem_name == 'door2':
-        qr = 0.5
-        dr = 0.5
-        ql = [1.1, 1.1]
-        ws = [[-2.5, 0], [1.4, 0]]
-        angles = [0, 0]
+        qr = 0.5 # width of the obstacle
+        dr = 0.5 # radius of drone
+        ql = [1.1, 1.1] # length of the obstacle
+        ws = [[-2.5, 0], [1.4, 0]] # starting points of the obstacle
+        angles = [0, 0] # angles of the obstacle
         q_initial = [-2, -2, 2, -2, 2, 2, -2, 2]
         q_terminal = [2, 2, -2, 2, -2, -2, 2, -2]
     else:
@@ -320,16 +324,17 @@ def main():
         foldername += 'penalty_'
     else:
         foldername += 'auglag_'
-    foldername += 'lbfgsiters_{}'.format(args.lbfgsiters)
-    foldername += 'addloss_{}'.format(args.addloss)
-    foldername += '_adddim_{}_'.format(add_dim)
-    foldername += '_seed_{}'.format(args.seed)
+    foldername += 'lbfgsiters_{}_'.format(args.lbfgsiters)
+    foldername += 'addloss_{}_'.format(args.addloss)
+    foldername += 'adddim_{}_'.format(add_dim)
+    foldername += 'seed_{}'.format(args.seed)
     print(foldername, flush = True)
     figname = foldername
 
     if not os.path.exists('figs'): os.mkdir('figs')
     if not os.path.exists('figs/'+figname): os.mkdir('figs/'+figname)
 
+    # Prepare data
     data = SPData(train_num, test_num, train_traj, test_traj, train_noise, test_noise, q_terminal, t_terminal, q_initial)
     if args.loadno == 0:
         net = MZNN(dim, layers, width, activation, ntype, dr = dr, ws = ws, angles = angles,
@@ -369,7 +374,7 @@ def main():
         y_test['bd'][num_interpolate,0] = torch.tensor([-2, -4, 2, -4, 2,4, -2,4], device = net.device, dtype = net.dtype)
         y_test['bd'][num_interpolate+1,0] = torch.tensor([-4, -4, 0, -4, 0,4, -4,4], device = net.device, dtype = net.dtype)
         y_test['bd'][num_interpolate+2,0] = torch.tensor([0, -4, 0, -2, 0,2, 0,4], device = net.device, dtype = net.dtype)
-        y_test['bd'] = y_test['bd'].float()
+        # y_test['bd'] = y_test['bd'].float()
         # LBFGS training
         net.LBFGS_training(X_test, y_test, True, args.lbfgsiters)
         q_pred = net.predict_q(X_test['interval'], True)
@@ -385,31 +390,31 @@ def main():
     compute_cost_hmin(data.X_test['interval'], net, traj_count) # only print values for the first traj_count many trajs
     
     # PS method fine tuning
-    start = perf_counter()
-    # compute the output trajectory of NN
-    num_times = 20
-    num_nodes = 3
-    PSiters = 10000
-    time_endpts = np.linspace(0.0, t_terminal, num_times)
-    q_ps = np.zeros((traj_count, (num_times-1) * num_nodes, dim))
-    # plot initial x
-    #plot_anime(PSsolver.get_initial_x(), net, figname + '/PSinit')
-    for i in range(traj_count):
-        # set initialization for PS method
-        x_init_ps = y_test['bd'][i,0].detach().cpu().numpy()
-        x_term_ps = y_test['bd'][i,1].detach().cpu().numpy()
-        PSsolver = PSmethod(time_endpts, num_nodes, net.dim, net, x_init_ps, x_term_ps, i)
-        PSsolver.solve(PSiters)
-        q_ps[i] = PSsolver.get_x()
-        print(' \n')
-    end = perf_counter()
-    execution_time = (end - start)
-    print('PS running time: {}'.format(execution_time), flush=True)
+    # start = perf_counter()
+    # # compute the output trajectory of NN
+    # num_times = 20
+    # num_nodes = 3
+    # PSiters = 10000
+    # time_endpts = np.linspace(0.0, t_terminal, num_times)
+    # q_ps = np.zeros((traj_count, (num_times-1) * num_nodes, dim))
+    # # plot initial x
+    # #plot_anime(PSsolver.get_initial_x(), net, figname + '/PSinit')
+    # for i in range(traj_count):
+    #     # set initialization for PS method
+    #     x_init_ps = y_test['bd'][i,0].detach().cpu().numpy()
+    #     x_term_ps = y_test['bd'][i,1].detach().cpu().numpy()
+    #     PSsolver = PSmethod(time_endpts, num_nodes, net.dim, net, x_init_ps, x_term_ps, i)
+    #     PSsolver.solve(PSiters)
+    #     q_ps[i] = PSsolver.get_x()
+    #     print(' \n')
+    # end = perf_counter()
+    # execution_time = (end - start)
+    # print('PS running time: {}'.format(execution_time), flush=True)
     # TODO: this q_ps is not time-uniformly distributed. How to generate anime for this?
-    if args.testcase == 2:
-        plot_heat(q_ps, net, figname+'/PSmethod', num_interpolate, traj_count, y_train, y_test)
-    else:
-        plot_anime(q_ps[0], net, figname+'/PSmethod')
+    # if args.testcase == 2:
+    #     plot_heat(q_ps, net, figname+'/PSmethod', num_interpolate, traj_count, y_train, y_test)
+    # else:
+    #     plot_anime(q_ps[0], net, figname+'/PSmethod')
     
 if __name__ == '__main__':
     main()

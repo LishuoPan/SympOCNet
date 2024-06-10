@@ -49,6 +49,9 @@ class SPNN(ln.nn.LossNN):
         
     # X['interval'] is num * 1
     def criterion(self, X, y):
+        # self.params['Qslope'] is trajs * 1 * latent_dim
+        # self.params['Qincpt'] is trajs * 1 * latent_dim
+        # self.params['Pincpt'] is trajs * 1 * latent_dim
         Q = self.params['Qslope'] * X['interval'] + self.params['Qincpt']
         P = 0.0 * X['interval'] + self.params['Pincpt']
         QP = torch.cat([Q,P], axis = -1).reshape([-1, self.latent_dim * 2])
@@ -76,13 +79,13 @@ class SPNN(ln.nn.LossNN):
         return mse(bdq, y['bd'])
     
     # MSE of bd err + sum of |min(h(q),0)|^2 (i.e., penalty method using quadratic)
-    def con_loss(self, X, y):
-        Q = self.params['Qslope'] * X['interval'] + self.params['Qincpt']
-        P = 0.0 * X['interval'] + self.params['Pincpt']
-        QP = torch.cat([Q,P], axis = -1).reshape([-1, self.latent_dim * 2])
-        q = self.net(QP)[...,:self.dim]
-        con_loss = torch.mean(torch.relu(-self.h(q))**2)
-        return self.bd_loss(X,y) + con_loss
+    # def con_loss(self, X, y):
+    #     Q = self.params['Qslope'] * X['interval'] + self.params['Qincpt']
+    #     P = 0.0 * X['interval'] + self.params['Pincpt']
+    #     QP = torch.cat([Q,P], axis = -1).reshape([-1, self.latent_dim * 2])
+    #     q = self.net(QP)[...,:self.dim]
+    #     con_loss = torch.mean(torch.relu(-self.h(q))**2)
+    #     return self.bd_loss(X,y) + con_loss
     
     # prediction without added dims
     def predict(self, t, returnnp=False):
