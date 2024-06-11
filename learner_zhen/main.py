@@ -9,6 +9,7 @@ from time import perf_counter
 from mznn import MZNN
 from visualize import plot_heat, plot_anime, plot_cost_constraint
 import logging
+from config import load_config
 import datetime
 
 def update_lag_mul(data, net):
@@ -104,13 +105,14 @@ def main():
         num_interpolate = 3
         traj_count = num_interpolate * 2
 
-    qr = 0.5  # width of the obstacle
-    dr = 0.5  # radius of drone
-    ql = [1.1, 1.1]  # length of the obstacle
-    ws = [[-2.5, 0], [1.4, 0]]  # starting points of the obstacle
-    angles = [0, 0]  # angles of the obstacle
-    q_initial = [-2, -2, 2, -2, 2, 2, -2, 2]
-    q_terminal = [2, 2, -2, 2, -2, -2, 2, -2]
+    robot_env_config = load_config("learner_zhen/config/door2.json")
+    qr = robot_env_config["qr"]
+    ql = robot_env_config["ql"]
+    ws = robot_env_config["ws"]
+    angles = robot_env_config["angles"]
+    dr = robot_env_config["dr"]
+    q_initial = robot_env_config["q_initial"]
+    q_terminal = robot_env_config["q_terminal"]
 
     dim = len(q_initial)
     add_dim = args.adddim
@@ -130,7 +132,14 @@ def main():
     print_every = 1000
     batch_size = None
 
-    # TODO: figure out a better output folder name
+    now = datetime.datetime.now()
+    now_str = now.strftime("%Y-%m-%d_%H-%M-%S")
+    
+    if not os.path.exists("results"):
+        os.mkdir("results")
+    if not os.path.exists("results/" + now_str):
+        os.mkdir("results/" + now_str)
+        
     foldername = "testcase_{}_distsquare_".format(args.testcase)
     foldername += "eps_{}_l_{}_".format(eps, l)
     if args.penalty:
@@ -143,24 +152,12 @@ def main():
     foldername += "seed_{}".format(args.seed)
     figname = foldername
     
-    now = datetime.datetime.now()
-    now_str = now.strftime("%Y-%m-%d_%H-%M-%S")
-    
-    if not os.path.exists("logs"):
-        os.mkdir("logs")
-    if not os.path.exists("logs/" + foldername):
-        os.mkdir("logs/" + foldername)
-        
-    if not os.path.exists("results"):
-        os.mkdir("results")
-    if not os.path.exists("results/" + now_str):
-        os.mkdir("results/" + now_str)
     
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(module)s.%(funcName)s: Line%(lineno)d] - %(levelname)s - %(message)s",
         datefmt="%d-%b-%y %H:%M:%S",
-        filename=f"logs/{foldername}/{now_str}.log",
+        filename=f"results/{now_str}/{now_str}.log",
         filemode="w",
     )
     

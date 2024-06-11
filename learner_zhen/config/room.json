@@ -1,0 +1,93 @@
+{
+  "obstacles": [
+    {
+      "id": 0,
+      "width": 0.1,
+      "length": 3,
+      "position": [-1, 5],
+      "angle": -1.5707963267948966
+    },
+    {
+      "id": 1,
+      "width": 0.1,
+      "length": 4,
+      "position": [-1, 2],
+      "angle": 0
+    },
+    {
+      "id": 2,
+      "width": 0.1,
+      "length": 1,
+      "position": [3, 2],
+      "angle": 1.5707963267948966
+    },
+    {
+      "id": 3,
+      "width": 0.1,
+      "length": 5,
+      "position": [-5, 0],
+      "angle": 0
+    },
+    {
+      "id": 4,
+      "width": 0.1,
+      "length": 0.6,
+      "position": [0, 0],
+      "angle": -1.5707963267948966
+    },
+    {
+      "id": 5,
+      "width": 0.1,
+      "length": 2.6,
+      "position": [0, -5],
+      "angle": 1.5707963267948966
+    },
+    {
+      "id": 6,
+      "width": 0.1,
+      "length": 2.6,
+      "position": [2, 0],
+      "angle": -1.5707963267948966
+    },
+    {
+      "id": 7,
+      "width": 0.1,
+      "length": 3,
+      "position": [2, 0],
+      "angle": 0
+    },
+    {
+      "id": 8,
+      "width": 0.1,
+      "length": 0.6,
+      "position": [2, -5],
+      "angle": 1.5707963267948966
+    }
+  ],
+  "robots": [
+    {
+      "id": 0,
+      "radius": 0.2,
+      "start_position": [-3.2, -1.9],
+      "goal_position": [0.4, 3.4]
+    },
+    {
+      "id": 1,
+      "radius": 0.2,
+      "start_position": [-3.2, 3.8],
+      "goal_position": [-2.4, -1.4]
+    },
+    {
+      "id": 2,
+      "radius": 0.2,
+      "start_position": [-2.2, 3.2],
+      "goal_position": [3.2, -2.8]
+    },
+    {
+      "id": 3,
+      "radius": 0.2,
+      "start_position": [0.4, 3.7],
+      "goal_position": [-3.6, 1.6]
+    }
+  ]
+}

@@ -1,0 +1,219 @@
+{
+  "obstacles": [
+    {
+      "id": 0,
+      "width": 0.22,
+      "length": 0.22,
+      "position": [-0.95, -0.45],
+      "angle": 0
+    },
+    {
+      "id": 1,
+      "width": 0.22,
+      "length": 0.22,
+      "position": [0.05, 0.85],
+      "angle": 0
+    },
+    {
+      "id": 2,
+      "width": 0.22,
+      "length": 0.22,
+      "position": [0.75, -0.95],
+      "angle": 0
+    }
+  ],
+  "robots": [
+    {
+      "id": 0,
+      "radius": 0.2,
+      "start_position": [-0.503523, 2.387046],
+      "goal_position": [-0.34557, -3.214932]
+    },
+    {
+      "id": 1,
+      "radius": 0.2,
+      "start_position": [0.605409, 2.259398],
+      "goal_position": [-1.442215, -3.138319]
+    },
+    {
+      "id": 2,
+      "radius": 0.2,
+      "start_position": [1.531816, 2.213917],
+      "goal_position": [-2.414149, -3.04728]
+    },
+    {
+      "id": 3,
+      "radius": 0.2,
+      "start_position": [2.516018, 2.109534],
+      "goal_position": [-3.332058, -2.953488]
+    },
+    {
+      "id": 4,
+      "radius": 0.2,
+      "start_position": [3.338134, 1.983654],
+      "goal_position": [-4.15853, -2.661223]
+    },
+    {
+      "id": 5,
+      "radius": 0.2,
+      "start_position": [4.049618, 1.773347],
+      "goal_position": [-4.752863, -2.17551]
+    },
+    {
+      "id": 6,
+      "radius": 0.2,
+      "start_position": [4.777025, 1.405058],
+      "goal_position": [-5.185679, -1.60141]
+    },
+    {
+      "id": 7,
+      "radius": 0.2,
+      "start_position": [5.259958, 0.76025],
+      "goal_position": [-5.587317, -0.855014]
+    },
+    {
+      "id": 8,
+      "radius": 0.2,
+      "start_position": [5.63665, 0.06859],
+      "goal_position": [-5.860354, -0.25218]
+    },
+    {
+      "id": 9,
+      "radius": 0.2,
+      "start_position": [5.341745, -0.627822],
+      "goal_position": [-5.648813, 0.451393]
+    },
+    {
+      "id": 10,
+      "radius": 0.2,
+      "start_position": [4.942385, -1.387763],
+      "goal_position": [-5.181974, 1.081534]
+    },
+    {
+      "id": 11,
+      "radius": 0.2,
+      "start_position": [4.219463, -2.208267],
+      "goal_position": [-4.571836, 1.529454]
+    },
+    {
+      "id": 12,
+      "radius": 0.2,
+      "start_position": [3.41903, -2.620691],
+      "goal_position": [-3.995126, 1.711806]
+    },
+    {
+      "id": 13,
+      "radius": 0.2,
+      "start_position": [2.559939, -2.779509],
+      "goal_position": [-3.205615, 1.855556]
+    },
+    {
+      "id": 14,
+      "radius": 0.2,
+      "start_position": [1.564794, -2.905562],
+      "goal_position": [-2.308047, 2.022393]
+    },
+    {
+      "id": 15,
+      "radius": 0.2,
+      "start_position": [0.485361, -3.040233],
+      "goal_position": [-1.37404, 2.172348]
+    },
+    {
+      "id": 16,
+      "radius": 0.2,
+      "start_position": [-0.34557, -3.214932],
+      "goal_position": [-0.503523, 2.387046]
+    },
+    {
+      "id": 17,
+      "radius": 0.2,
+      "start_position": [-1.442215, -3.138319],
+      "goal_position": [0.605409, 2.259398]
+    },
+    {
+      "id": 18,
+      "radius": 0.2,
+      "start_position": [-2.414149, -3.04728],
+      "goal_position": [1.531816, 2.213917]
+    },
+    {
+      "id": 19,
+      "radius": 0.2,
+      "start_position": [-3.332058, -2.953488],
+      "goal_position": [2.516018, 2.109534]
+    },
+    {
+      "id": 20,
+      "radius": 0.2,
+      "start_position": [-4.15853, -2.661223],
+      "goal_position": [3.338134, 1.983654]
+    },
+    {
+      "id": 21,
+      "radius": 0.2,
+      "start_position": [-4.752863, -2.17551],
+      "goal_position": [4.049618, 1.773347]
+    },
+    {
+      "id": 22,
+      "radius": 0.2,
+      "start_position": [-5.185679, -1.60141],
+      "goal_position": [4.777025, 1.405058]
+    },
+    {
+      "id": 23,
+      "radius": 0.2,
+      "start_position": [-5.587317, -0.855014],
+      "goal_position": [5.259958, 0.76025]
+    },
+    {
+      "id": 24,
+      "radius": 0.2,
+      "start_position": [-5.860354, -0.25218],
+      "goal_position": [5.63665, 0.06859]
+    },
+    {
+      "id": 25,
+      "radius": 0.2,
+      "start_position": [-5.648813, 0.451393],
+      "goal_position": [5.341745, -0.627822]
+    },
+    {
+      "id": 26,
+      "radius": 0.2,
+      "start_position": [-5.181974, 1.081534],
+      "goal_position": [4.942385, -1.387763]
+    },
+    {
+      "id": 27,
+      "radius": 0.2,
+      "start_position": [-4.571836, 1.529454],
+      "goal_position": [4.219463, -2.208267]
+    },
+    {
+      "id": 28,
+      "radius": 0.2,
+      "start_position": [-3.995126, 1.711806],
+      "goal_position": [3.41903, -2.620691]
+    },
+    {
+      "id": 29,
+      "radius": 0.2,
+      "start_position": [-3.205615, 1.855556],
+      "goal_position": [2.559939, -2.779509]
+    },
+    {
+      "id": 30,
+      "radius": 0.2,
+      "start_position": [-2.308047, 2.022393],
+      "goal_position": [1.564794, -2.905562]
+    },
+    {
+      "id": 31,
+      "radius": 0.2,
+      "start_position": [-1.37404, 2.172348],
+      "goal_position": [0.485361, -3.040233]
+    }
+  ]
+}

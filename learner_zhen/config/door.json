@@ -1,0 +1,70 @@
+{
+    "obstacles": [
+        {
+            "id": 0,
+            "width": 0.5,
+            "length": 1.1,
+            "position": [
+                -2.5,
+                0
+            ],
+            "angle": 0
+        },
+        {
+            "id": 1,
+            "width": 0.5,
+            "length": 1.1,
+            "position": [
+                -2.5,
+                -2
+            ],
+            "angle": 0
+        },
+        {
+            "id": 2,
+            "width": 0.5,
+            "length": 1.1,
+            "position": [
+                1.4,
+                0
+            ],
+            "angle": 0
+        },
+        {
+            "id": 3,
+            "width": 0.5,
+            "length": 1.1,
+            "position": [
+                1.4,
+                -2
+            ],
+            "angle": 0
+        }
+    ],
+    "robots": [
+        {
+            "id": 0,
+            "radius": 0.5,
+            "start_position": [
+                -2,
+                -4
+            ],
+            "goal_position": [
+                2,
+                2
+            ]
+        },
+        {
+            "id": 1,
+            "radius": 0.5,
+            "start_position": [
+                2,
+                -4
+            ],
+            "goal_position": [
+                -2,
+                2
+            ]
+        }
+    ]
+}
