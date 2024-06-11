@@ -5,10 +5,11 @@ import os
 import time
 import numpy as np
 import torch
-
+from visualize import plot_simple
 from .nn import LossNN
 from .utils import timing, cross_entropy_loss
 import logging
+import copy
 
 class Brain:
     '''Runner based on torch.
@@ -78,19 +79,20 @@ class Brain:
         logging.info('Training...')
         loss_history = []
         for i in range(self.iterations + 1):
+            # Update the losses
             if self.batch_size is not None:
                 X_train, y_train = self.data.get_batch(self.batch_size)
                 loss = self.__criterion(self.net(X_train), y_train)
             else:
                 loss = self.__criterion(self.net(self.data.X_train), self.data.y_train)
             if i % self.print_every == 0 or i == self.iterations:
+                # Update the test losses
                 if self.no_test:
                     loss_test = loss
                 else:
                     loss_test = self.__criterion(self.net(self.data.X_test), self.data.y_test)
                 logging.info('{:<9}Train loss: {:<25}Test loss: {:<25}'.format(i, loss.item(), loss_test.item()))
-                for params in self.__optimizer.param_groups:
-                    logging.info("learning rate: {}".format(params["lr"]))
+                # Fix any nan encountered
                 if torch.any(torch.isnan(loss)):
                     try:
                         logging.info('Encountering nan, restore from last saved model.')
@@ -105,6 +107,7 @@ class Brain:
                         self.encounter_nan = True
                         logging.info('Encountering nan, stop training')
                         return None
+                # Save the model
                 if self.save:
                     if not os.path.exists('model'): os.mkdir('model')
                     if self.path == None:
@@ -112,6 +115,9 @@ class Brain:
                     else:
                         if not os.path.isdir('model/'+self.path): os.makedirs('model/'+self.path)
                         torch.save(self.net, 'model/{}/model{}.pkl'.format(self.path, i))
+                        q_pred = self.net.predict_q(self.data.X_test['interval'], True)
+                        plot_simple(q_pred, self.net, self.data.y_train_np, self.data.y_test_np, i)
+                # Run the callback
                 if self.callback is not None: 
                     output = self.callback(self.data, self.net)
                     loss_history.append([i, loss.item(), loss_test.item(), *output])
@@ -208,6 +214,13 @@ class Brain:
         self.best_model = None
         self.data.device = self.device
         self.data.dtype = self.dtype
+        self.data_np = copy.deepcopy(self.data)
+        # Create a numpy copy of the data for plotting
+        self.data_np.X_train = {key: value.cpu().numpy() for key, value in self.data.X_train.items()}
+        self.data_np.y_train = {key: value.cpu().numpy() for key, value in self.data.y_train.items()}
+        self.data_np.X_test = {key: value.cpu().numpy() for key, value in self.data.X_test.items()}
+        self.data_np.y_test = {key: value.cpu().numpy() for key, value in self.data.y_test.items()}
+        
         self.net.device = self.device
         self.net.dtype = self.dtype
         self.parameters_nn_device = self.device

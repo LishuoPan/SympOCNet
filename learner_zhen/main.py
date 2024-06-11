@@ -150,6 +150,11 @@ def main():
         os.mkdir("logs")
     if not os.path.exists("logs/" + foldername):
         os.mkdir("logs/" + foldername)
+        
+    if not os.path.exists("results"):
+        os.mkdir("results")
+    if not os.path.exists("results/" + now_str):
+        os.mkdir("results/" + now_str)
     
     logging.basicConfig(
         level=logging.INFO,

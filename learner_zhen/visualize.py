@@ -8,6 +8,41 @@ def dist(w, v, p, qr):
     projection = v + np.matmul(t, (w - v))
     return np.sqrt(np.sum((p - projection) ** 2, axis = -1)) - qr
 
+
+def plot_simple(q_pred, net, y_train, y_test, iter_count):
+    """
+    A simpler version of plot_heat without interpolation and multiple trajectories
+    Called in brain.run() (during training)
+    """
+    num_drone = net.dim // 2
+    x = np.linspace(-5,5,100)
+    y = np.linspace(-5,5,100)
+    xx, yy = np.meshgrid(x, y)
+    zz = []
+    for i, w in enumerate(net.ws):
+        w = np.array([w])
+        v = w + np.array([[np.cos(net.angles[i]), np.sin(net.angles[i])]]) * net.ql[i]
+        h = lambda p: dist(w, v, p, net.qr)
+        p = np.concatenate([xx.reshape([-1,1]), yy.reshape([-1,1])], axis = -1)
+        zz.append(h(p).reshape([100,100]))
+    zz = np.min(np.array(zz), axis = 0)
+    
+    plt.figure()
+    fig, ax = plt.subplots()
+    ax.set_xlim((-5, 5))
+    ax.set_ylim((-5, 5))
+    plt.contour(xx,yy,zz,[0])
+    for i in range(y_train['bd'].shape[0]):
+        for j in range(num_drone):
+            ax.add_patch(plt.Circle((y_train['bd'][i, 0, 2*j], y_train['bd'][i, 0, 2*j+1]), net.dr, fill = True, color = 'yellow', linestyle = '--'))
+    for i in range(num_drone):
+        ax.add_patch(plt.Circle((y_test['bd'][0,0,2*i], y_test['bd'][0,0,2*i+1]), net.dr, fill = False, color = 'black', linestyle = '--'))
+        ax.add_patch(plt.Circle((y_test['bd'][0,1,2*i], y_test['bd'][0,1,2*i+1]), net.dr, fill = False, color = 'red', linestyle = '-'))
+        plt.plot(q_pred[0,:,2*i], q_pred[0,:,2*i+1])
+    plt.savefig('figs/plot'+str(iter_count)+'.pdf')
+    plt.close()
+
+
 def plot_heat(q_pred, net, filename, num_interpolate, num_total, y_train, y_test):
     num_drone = net.dim // 2
     x = np.linspace(-5,5,100)
