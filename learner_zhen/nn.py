@@ -12,6 +12,7 @@ from learner.utils import mse, grad
 from time import perf_counter
 import torch.nn.functional as F
 import torch.nn as nn
+import logging
 
 class ParametricNN(ln.nn.Module):
     def __init__(self, latent_dim, layers, width, activation):
@@ -141,7 +142,7 @@ class SPNN(ln.nn.LossNN):
         # parameters for Lag mul ends
 
         self.trajs = trajs
-        # self.__init_param()
+        self.__init_param()
         self.__init_net(layers, width, activation, ntype)
         
     # X['interval'] is num * 1
@@ -166,22 +167,16 @@ class SPNN(ln.nn.LossNN):
         loss_1 = mse(jacob[:, :self.latent_dim], dH[...,self.latent_dim:])
         loss_2 = mse(jacob[:, self.latent_dim:], -dH[...,:self.latent_dim])
         loss_sympnet = loss_1 + loss_2
-        # print("loss_sympnet: ", loss_sympnet)
-
-        loss_bd = self.bd_loss(X, y)
-        loss = loss_sympnet + self.lam * loss_bd
-        # print("loss_bd", loss_bd)
-
+        
+        loss_bd = self.lam * self.bd_loss(X, y)
         # aug Lag: ||max(0, mul - rho * h(q))||^2/ (2*rho)
-        loss_aug_lag = torch.sum(torch.relu(self.lag_mul_h - self.rho_h * self.h(qp[...,:self.dim]))**2)/(2*self.rho_h) # augmented Lagrangian
-        loss = loss + loss_aug_lag
-        # print("aug Lag: ", loss_aug_lag)
-
+        loss_aug_lag = torch.sum(torch.relu(self.lag_mul_h - self.rho_h * self.h(qp[...,:self.dim]))**2)/(2*self.rho_h)
         # loss for bd
         y_m_bdq = y['bd'] - self.predict_q(X['bd'])
         loss_aug_bd = torch.nn.MSELoss(reduction='sum')(self.lag_mul_bc, self.rho_bc * y_m_bdq)/(2*self.rho_bc)
-        loss = loss + loss_aug_bd
-        # print("loss_aug_bd: ", loss_aug_bd)
+        
+        loss = loss_sympnet + loss_bd + loss_aug_lag + loss_aug_bd
+        logging.info('loss_sympnet: {}, loss_bd: {}, loss_aug_lag: {}, loss_aug_bd: {}, total: {}'.format(loss_sympnet.item(), loss_bd.item(), loss_aug_lag.item(), loss_aug_bd.item(), loss.item()))
         return loss
     
     # MSE loss of bdry condition
@@ -261,14 +256,14 @@ class SPNN(ln.nn.LossNN):
                     optim.zero_grad()
                 loss = loss_fnc(X, y)
                 if i % 10 == 0:
-                    print('{:<9} loss: {:<25}'.format(i, loss.item()), flush=True)
+                    logging.info('{:<9} loss: {:<25}'.format(i, loss.item()))
                 if loss.requires_grad:
                     loss.backward()
                 return loss
             optim.step(closure)
         end = perf_counter()
         execution_time = (end - start)
-        print('LBFGS running time: {}'.format(execution_time), flush=True)
+        logging.info('LBFGS running time: {}'.format(execution_time))
     
     # penalty function: if x>l, return -log(x); else return -log(l)+1/2*(((x-2l)/l)^2-1)
     def betal(self, x):
@@ -320,11 +315,11 @@ class SPNN(ln.nn.LossNN):
                     # update lag mul
                     ret_lag_mul = new_lag_mul
                     ret_etak = etak / (1 + rho ** beta)
-                    print('update lag mul step {}, etak {}'.format(torch.max(torch.abs(ret_lag_mul - lag_mul)).item(), ret_etak))
+                    logging.info('update lag mul step {}, etak {}'.format(torch.max(torch.abs(ret_lag_mul - lag_mul)).item(), ret_etak))
                 else:
                     ret_rho = rho * tau
                     ret_etak = self.eta0 / (1+ rho ** alp)
-                    print('update rho {}, etak {}'.format(ret_rho, ret_etak))
+                    logging.info('update rho {}, etak {}'.format(ret_rho, ret_etak))
                 return ret_lag_mul, ret_etak, ret_rho
 
             self.lag_mul_h, self.etak_h, self.rho_h = update_lag_mul_framework(constraint_h, self.etak_h, lag_mul_h, new_lag_mul_h, self.rho_h)
