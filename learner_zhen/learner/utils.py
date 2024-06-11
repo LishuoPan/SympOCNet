@@ -4,7 +4,7 @@
 from functools import wraps
 import time
 from mpl_toolkits.mplot3d import art3d
-
+import logging
 import numpy as np
 import torch
 
@@ -16,7 +16,7 @@ def timing(func):
     def wrapper(*args, **kwargs):
         t = time.time()
         result = func(*args, **kwargs)
-        print('\'' + func.__name__ + '\'' + ' took {} s'.format(time.time() - t))
+        logging.info('\'' + func.__name__ + '\'' + ' took {} s'.format(time.time() - t))
         return result
     return wrapper
 

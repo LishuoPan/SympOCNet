@@ -8,6 +8,7 @@ import torch
 
 from .nn import LossNN
 from .utils import timing, cross_entropy_loss
+import logging
 
 class Brain:
     '''Runner based on torch.
@@ -74,7 +75,7 @@ class Brain:
     @timing
     def run(self):
         self.__init_brain()
-        print('Training...', flush=True)
+        logging.info('Training...')
         loss_history = []
         for i in range(self.iterations + 1):
             if self.batch_size is not None:
@@ -87,12 +88,12 @@ class Brain:
                     loss_test = loss
                 else:
                     loss_test = self.__criterion(self.net(self.data.X_test), self.data.y_test)
-                print('{:<9}Train loss: {:<25}Test loss: {:<25}'.format(i, loss.item(), loss_test.item()), flush=True)
+                logging.info('{:<9}Train loss: {:<25}Test loss: {:<25}'.format(i, loss.item(), loss_test.item()))
                 for params in self.__optimizer.param_groups:
-                    print("learning rate: ", params["lr"])
+                    logging.info("learning rate: {}".format(params["lr"]))
                 if torch.any(torch.isnan(loss)):
                     try:
-                        print('Encountering nan, restore from last saved model.')
+                        logging.info('Encountering nan, restore from last saved model.')
                         if self.path is None:
                             self.net = torch.load('model/model{}.pkl'.format(i - self.print_every))
                         else:
@@ -102,7 +103,7 @@ class Brain:
                         loss = self.__criterion(self.net(self.data.X_train), self.data.y_train)
                     except:
                         self.encounter_nan = True
-                        print('Encountering nan, stop training', flush=True)
+                        logging.info('Encountering nan, stop training')
                         return None
                 if self.save:
                     if not os.path.exists('model'): os.mkdir('model')
@@ -120,9 +121,9 @@ class Brain:
                 self.__optimizer.zero_grad(True)
                 loss.backward()
                 self.__optimizer.step()
-                self.__scheduler.step()
+                # self.__scheduler.step()
             self.loss_history = np.array(loss_history)
-        print('Done!', flush=True)
+        logging.info('Done training!')
         return self.loss_history
     
     def restore(self):
@@ -139,8 +140,8 @@ class Brain:
             iteration = int(self.loss_history[best_loss_index, 0])
             loss_train = self.loss_history[best_loss_index, 1]
             loss_test = self.loss_history[best_loss_index, 2]
-            print('Best model at iteration {}:'.format(iteration), flush=True)
-            print('Train loss:', loss_train, 'Test loss:', loss_test, flush=True)
+            logging.info('Best model at iteration {}:'.format(iteration))
+            logging.info('Train loss: {} Test loss: {}'.format(loss_train, loss_test))
             if self.path == None:
                 self.best_model = torch.load('model/model{}.pkl'.format(iteration))
             else:
@@ -161,18 +162,17 @@ class Brain:
                 loss_test = loss
             else:
                 loss_test = self.best_model.criterion(self.best_model(self.data.X_test), self.data.y_test)
-            # print('Train loss: {:<25}Test loss: {:<25}'.format(loss.item(), loss_test.item()), flush=True)
+            # logging.info('Train loss: {:<25}Test loss: {:<25}'.format(loss.item(), loss_test.item()))
             it = self.it + 1
             if it % self.print_every == 0 or it == self.lbfgs_steps:
-                print('L-BFGS|| It: %05d, Loss: %.4e, Test: %.4e' % 
-                          (it, loss.item(), loss_test.item()))
+                logging.info('L-BFGS|| It: %05d, Loss: %.4e, Test: %.4e', it, loss.item(), loss_test.item())
             self.it = it
             if loss.requires_grad:
                 loss.backward()
             return loss
         if self.lbfgs_steps > 0:
             optim.step(closure)
-        print('Done!', flush=True)
+        logging.info('Done restoring!')
         return self.best_model
     
     def output(self, data, best_model, loss_history, info, **kwargs):
