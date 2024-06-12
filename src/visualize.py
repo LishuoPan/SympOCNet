@@ -15,7 +15,7 @@ def plot_simple(q_pred, net, y_train, y_test, iter_count):
     Called in brain.run() (during training)
     """
     num_drone = net.dim // 2
-    x = np.linspace(-5,5,100)
+    x = np.linspace(-8,8,100)
     y = np.linspace(-5,5,100)
     xx, yy = np.meshgrid(x, y)
     zz = []
@@ -28,7 +28,7 @@ def plot_simple(q_pred, net, y_train, y_test, iter_count):
     zz = np.min(np.array(zz), axis = 0)
     
     fig, ax = plt.subplots()
-    ax.set_xlim((-5, 5))
+    ax.set_xlim((-8, 8))
     ax.set_ylim((-5, 5))
     plt.contour(xx,yy,zz,[0])
     for i in range(y_train['bd'].shape[0]):
@@ -115,6 +115,59 @@ def plot_anime(q_pred, net, filename):
     anim.save('figs/'+filename+'.gif', writer='imagemagick', fps=30)
     plt.show()
     plt.close()
+    
+
+def plot_anime_multiple(q_pred, net, filename):
+    """Plot animation for multiple trajectories"""
+    from matplotlib import animation
+    from random import randint
+    num_drone = net.dim // 2
+    x = np.linspace(-5,5,100)
+    y = np.linspace(-5,5,100)
+    xx, yy = np.meshgrid(x, y)
+    zz = []
+    for i, w in enumerate(net.ws):
+        w = np.array([w])
+        v = w + np.array([[np.cos(net.angles[i]), np.sin(net.angles[i])]]) * net.ql[i]
+        h = lambda p: dist(w, v, p, net.qr)
+        p = np.concatenate([xx.reshape([-1,1]), yy.reshape([-1,1])], axis = -1)
+        zz.append(h(p).reshape([100,100]))
+    zz = np.min(np.array(zz), axis = 0)
+    
+    # index is the trajectory instance to plot (first dim in q_pred)
+    index = 0
+    
+    fig = plt.figure(figsize = [4,4])
+    ax = plt.axes(xlim=(-8, 8), ylim=(-5,5))
+    plt.contour(xx,yy,zz,[0])
+    
+    colors = []
+    for i in range(num_drone):
+        colors.append('#%06X' % randint(0, 0xFFFFFF))
+    drones = []
+    for i in range(num_drone):
+        drones.append(plt.Circle((q_pred[index, 0, 2*i], q_pred[index, 0, 2*i+1]), net.dr, fill = False, color = colors[i]))
+        
+        
+    def init():
+        for i in range(num_drone):
+            ax.add_patch(drones[i])
+        return drones 
+    def animate(i):
+        for j in range(num_drone):
+            drones[j].center = (q_pred[index, i,2*j], q_pred[index, i,2*j+1])
+        return drones
+    frames = q_pred.shape[1]
+    delay_time = 20000 // q_pred.shape[1]
+    anim = animation.FuncAnimation(fig, animate, init_func=init,
+                               frames=frames, interval=delay_time, blit=True, repeat = False)
+    anim.save('figs/'+filename+'.gif', writer='imagemagick', fps=30)
+    plt.show()
+    # plt.close()
+    
+    
+    
+    
     
 def plot_cost_constraint(data, net, loss, filename, print_every):
     cost = loss[:,-2]
