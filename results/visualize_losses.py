@@ -3,18 +3,19 @@ import matplotlib.pyplot as plt
 
 unified = True
 
-with open("parameters_nn_added/outputs/new_losses.log", "r") as f:
+with open("2024-06-11_13-46-44/2024-06-11_13-46-44.log", "r") as f:
     lines = f.readlines()
 
 data = []
 for line in lines:
-    line = line.strip().split("INFO:root:")[1]
-    items = line.split(", ")
-    row = {}
-    for item in items:
-        key, value = item.split(": ")
-        row[key] = float(value)
-    data.append(row)
+    line = line.strip().split("-")[-1]
+    if line.startswith(" loss_"):
+        items = line.split(", ")
+        row = {}
+        for item in items:
+            key, value = item.split(": ")
+            row[key] = float(value)
+        data.append(row)
 
 df = pd.DataFrame(data)
 df = df.iloc[::100, :]

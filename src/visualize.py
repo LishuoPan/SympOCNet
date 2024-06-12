@@ -27,7 +27,6 @@ def plot_simple(q_pred, net, y_train, y_test, iter_count):
         zz.append(h(p).reshape([100,100]))
     zz = np.min(np.array(zz), axis = 0)
     
-    plt.figure()
     fig, ax = plt.subplots()
     ax.set_xlim((-5, 5))
     ax.set_ylim((-5, 5))

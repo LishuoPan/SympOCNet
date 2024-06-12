@@ -105,7 +105,7 @@ def main():
         num_interpolate = 3
         traj_count = num_interpolate * 2
 
-    robot_env_config = load_config("learner_zhen/config/door2.json")
+    robot_env_config = load_config("learner_zhen/config/demo_32.json")
     qr = robot_env_config["qr"]
     ql = robot_env_config["ql"]
     ws = robot_env_config["ws"]
