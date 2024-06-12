@@ -7,7 +7,7 @@ from PS_method import PSmethod
 import os
 from time import perf_counter
 from mznn import MZNN
-from visualize import plot_heat, plot_anime, plot_cost_constraint
+from visualize import plot_heat, plot_anime, plot_cost_constraint, plot_simple, plot_anime_multiple
 import logging
 from config import load_config
 import datetime
@@ -90,7 +90,7 @@ def main():
 
     # data
     t_terminal = 1.0
-    train_num = 200
+    train_num = 200 # number of time steps
     test_num = 200
     train_traj = 1
     test_traj = 1
@@ -99,13 +99,13 @@ def main():
     traj_count = 1
     # change to mult traj if testcase == 2
     if args.testcase == 2:
-        train_traj = 100
+        train_traj = 100 # number of trajectories
         test_traj = 100
         train_noise = 1.0
         num_interpolate = 3
         traj_count = num_interpolate * 2
 
-    robot_env_config = load_config("learner_zhen/config/demo_32.json")
+    robot_env_config = load_config("src/config/demo_32.json")
     qr = robot_env_config["qr"]
     ql = robot_env_config["ql"]
     ws = robot_env_config["ws"]
@@ -196,8 +196,7 @@ def main():
         if args.loadfoldername == "":
             raise ValueError("Please provide the foldername for the model to load")
         net = torch.load(
-            "model/" + args.foldername + "/model{}.pkl".format(args.loadno),
-            map_location=torch.device("cpu"),
+            "results/{}/model/{}/model{}.pkl".format(args.loadfoldername, foldername, args.loadno),
         )
 
     net_plot = net
