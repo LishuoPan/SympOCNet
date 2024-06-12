@@ -6,16 +6,14 @@
 
 ## 2024-06-10
 
-- Rerun `example_maze.py` with all default settings and saved to baseline_rerun
 - Added the `visualize_losses.py` script to visualize `original_losses.log`
-
+- Rerun `example_maze.py` with all default settings and saved to baseline_rerun
   - Losses increased to ~25k iters and then decrease to about 40 at the end of 10k iters
   - PINN loss (loss_sympnet) dominated after 40k iters
   - Very unstable loss_aug_lag and loss_aug_bd
-
 - Added parametric NN with params [here](https://github.com/LishuoPan/SympOCNet/blob/8411d8dcc23d2ca3d0f60f8b90acdf6cb133b6ce/learner_zhen/nn.py#L21)
-- Saved results to `parameters_nn_added`, best model at 45k iters
-- For now, loss_aug_bd completed exploded -> NEED TO DEBUG
+  - Saved results to `parameters_nn_added`, best model at 45k iters
+  - For now, loss_aug_bd completed exploded -> NEED TO DEBUG
 
 ## 2024-06-11
 
@@ -35,10 +33,10 @@
 
 Need to perform collision check and higher order derivatives check on the outputs
 
-
 ## TODO:
 
 - [ ] Figure out what cost actually is 
-- [ ] Pairwise collision check across all time and higher order derivatives
 - [ ] Make sure LBGFS works
-- [ ] Plot animation for demo_32
+- [ ] Spectral norm
+- [ ] 3D experiment
+- [ ] 32 with parameters_nn

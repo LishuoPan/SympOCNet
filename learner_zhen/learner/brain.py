@@ -5,7 +5,6 @@ import os
 import time
 import numpy as np
 import torch
-from visualize import plot_simple
 from .nn import LossNN
 from .utils import timing, cross_entropy_loss
 import logging
@@ -115,8 +114,6 @@ class Brain:
                     else:
                         if not os.path.isdir('model/'+self.path): os.makedirs('model/'+self.path)
                         torch.save(self.net, 'model/{}/model{}.pkl'.format(self.path, i))
-                        q_pred = self.net.predict_q(self.data.X_test['interval'], True)
-                        plot_simple(q_pred, self.net, self.data.y_train_np, self.data.y_test_np, i)
                 # Run the callback
                 if self.callback is not None: 
                     output = self.callback(self.data, self.net)

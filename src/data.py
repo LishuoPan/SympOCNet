@@ -37,7 +37,7 @@ class SPData(ln.Data):
         q_initial = q_initial + (2 * np.random.rand(*q_initial.shape) - 1) * noise # shape 100 x 8
         q_terminal = np.expand_dims(self.q_terminal, 0).repeat(traj_num, axis = 0) # shape 100 x 8
         y['bd'] = np.transpose(np.array([q_initial, q_terminal]), (1,0,2))
-        return X, y # X: {'interval': num x 1, 'bd': 2 x 1}, y: {'bd': 100 x 2 x 8}
+        return X, y # X: {'interval': num x 1, 'bd': 2 x 1}, y: {'bd': traj_num x 2 x 8}
     
     def __init_data(self):
         self.X_train, self.y_train = self.generate(self.train_num, self.train_traj, self.train_noise)

@@ -63,7 +63,20 @@ class ParametricNN(ln.nn.Module):
                 nn.init.kaiming_uniform(m.weight)
             # if isinstance(m, torch.nn.BatchNorm1d):
             #     nn.init.xavier_uniform(m.weight)
-    
+
+# Legacy, keep for now because loading model requires this class
+class ParametersNN(ln.nn.Module):
+    def __init__(self, latent_dim, layers, width, activation):
+        super(ParametersNN, self).__init__()
+        self.Qslope = ParametricNN(latent_dim, layers, width, activation)
+        self.Qincpt = ParametricNN(latent_dim, layers, width, activation)
+        self.Pincpt = ParametricNN(latent_dim, layers, width, activation)
+
+    def forward(self, x):
+        Qslope = self.Qslope(x)
+        Qincpt = self.Qincpt(x)
+        Pincpt = self.Pincpt(x)
+        return {'Qslope': Qslope, 'Qincpt': Qincpt, 'Pincpt': Pincpt}  
 
 class QslopeNet(ln.nn.Module):
     def __init__(self, latent_dim, layers, width, activation):
@@ -143,10 +156,10 @@ class SPNN(ln.nn.LossNN):
             Qslope = self.qslope_net(torch.ones((self.trajs, 1, self.latent_dim), dtype=self.dtype, device=self.device))
             Qincpt = self.qincpt_net(torch.ones((self.trajs, 1, self.latent_dim), dtype=self.dtype, device=self.device))
             Pincpt = self.pincpt_net(torch.ones((self.trajs, 1, self.latent_dim), dtype=self.dtype, device=self.device))
-        Q = Qslope * X['interval'] + Qincpt
-        P = 0.0 * X['interval'] + Pincpt
+        Q = Qslope * X['interval'] + Qincpt # on latent_dim (y)
+        P = 0.0 * X['interval'] + Pincpt 
         QP = torch.cat([Q,P], axis = -1).reshape([-1, self.latent_dim * 2])
-        qp = self.net(QP)
+        qp = self.net(QP) # on original dimension (x, p)
         H = self.H(qp)  # (trajs*num) *1
         dH = grad(H, qp)  # (trajs*num) * (2latent_dim)
         grad_output = Qslope.repeat([1,QP.shape[0]//self.trajs, 1]).reshape([-1, self.latent_dim])
@@ -209,7 +222,7 @@ class SPNN(ln.nn.LossNN):
         P = 0.0 * t + Pincpt
         QP = torch.cat([Q,P], dim = -1)
         qp = self.net(QP)
-        q = qp[...,:self.dim]
+        q = qp[...,:self.dim] # position on original dimension
         if returnnp:
             q = q.detach().cpu().numpy()
         return q
@@ -367,6 +380,7 @@ class SPNN(ln.nn.LossNN):
         elif ntype == 'FNN':
            self.net = ln.nn.FNN(self.latent_dim*2, self.latent_dim*2, layers, width, activation)
            
+        self.parameters_nn = ParametricNN(self.latent_dim, layers, width, activation)
         self.qslope_net = QslopeNet(self.latent_dim, layers, width, activation)
         self.qincpt_net = QincptNet(self.latent_dim, layers, width, activation)
         self.pincpt_net = PincptNet(self.latent_dim, layers, width, activation)
