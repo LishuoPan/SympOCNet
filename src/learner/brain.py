@@ -5,6 +5,7 @@ import os
 import time
 import numpy as np
 import torch
+from visualize import plot_simple
 from .nn import LossNN
 from .utils import timing, cross_entropy_loss
 import logging
@@ -114,6 +115,8 @@ class Brain:
                     else:
                         if not os.path.isdir('model/'+self.path): os.makedirs('model/'+self.path)
                         torch.save(self.net, 'model/{}/model{}.pkl'.format(self.path, i))
+                        q_pred = self.net.predict_q(self.data.X_test['interval'], True)
+                        plot_simple(q_pred, self.net, self.data.y_train_np, self.data.y_test_np, i)
                 # Run the callback
                 if self.callback is not None: 
                     output = self.callback(self.data, self.net)
@@ -210,25 +213,15 @@ class Brain:
         self.encounter_nan = False
         self.best_model = None
         self.data.device = self.device
-        self.data.dtype = self.dtype
-        self.data_np = copy.deepcopy(self.data)
-        # Create a numpy copy of the data for plotting
-        self.data_np.X_train = {key: value.cpu().numpy() for key, value in self.data.X_train.items()}
-        self.data_np.y_train = {key: value.cpu().numpy() for key, value in self.data.y_train.items()}
-        self.data_np.X_test = {key: value.cpu().numpy() for key, value in self.data.X_test.items()}
-        self.data_np.y_test = {key: value.cpu().numpy() for key, value in self.data.y_test.items()}
-        
+        self.data.dtype = self.dtype        
         self.net.device = self.device
         self.net.dtype = self.dtype
-        self.parameters_nn_device = self.device
-        self.parameters_nn_dtype = self.dtype
         self.__init_optimizer()
         self.__init_scheduler()
         self.__init_criterion()
     
     def __init_optimizer(self):
         if self.optimizer == 'adam':
-            # params = list(self.net.net.parameters()) + list(self.net.parameters_nn.parameters())
             self.__optimizer = torch.optim.Adam([{'params': self.net.net.parameters(), 'lr': 0.001},
                                                 {'params': self.net.qslope_net.parameters(), 'lr': 0.001},
                                                 {'params': self.net.qincpt_net.parameters(), 'lr': 0.001},
